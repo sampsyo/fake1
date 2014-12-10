@@ -1,0 +1,7 @@
+[package]
+name = "fake"
+version = "0.0.1"
+authors = [ "Adrian Sampson <adrian@radbox.org>" ]
+
+[[bin]]
+name = "fake"
