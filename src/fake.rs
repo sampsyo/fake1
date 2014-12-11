@@ -2,19 +2,36 @@
 #[phase(plugin)]
 extern crate peg_syntax_ext;
 
-pub struct Something {
-    pub name: String
+pub struct Rule {
+    pub target: Expr
+}
+
+pub struct Expr {
+    pub value: String
 }
 
 peg! grammar(r#"
-use super::Something;
+use super::Rule;
+use super::Expr;
 
 #[pub]
-stuff -> Something
-    = [a-z]+ { Something { name: match_str.into_string() } }
+rule -> Rule
+    = t:expr ws ":" ws d:expr
+    { Rule { target: t } }
+
+ws -> ()
+    = [ \t]*
+
+expr -> Expr
+    = i:ident
+    { Expr { value: i } }
+
+ident -> String
+    = [A-Za-z0-9_-]+
+    { match_str.into_string() }
 "#)
 
 fn main() {
-    let res = grammar::stuff("hello");
-    println!("{}", res.unwrap().name);
+    let res = grammar::rule("foo: bar");
+    println!("{}", res.unwrap().target.value);
 }
