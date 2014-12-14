@@ -3,7 +3,8 @@
 extern crate peg_syntax_ext;
 
 pub struct Rule {
-    pub target: Expr,
+    pub targets: Vec<Expr>,
+    pub deps: Vec<Expr>,
     pub recipe: Vec<Recipe>
 }
 
@@ -22,8 +23,8 @@ use super::Recipe;
 
 #[pub]
 rule -> Rule
-    = t:expr ws ":" ws d:expr ws r:recipe*
-    { Rule { target: t, recipe: r } }
+    = t:exprlist ws ":" ws d:exprlist ws r:recipe*
+    { Rule { targets: t, deps: d, recipe: r } }
 
 recipe -> Recipe
     = "\n" [ \t]+ l:line
@@ -33,8 +34,12 @@ ws -> ()
     = [ \t]*
 
 expr -> Expr
-    = i:ident
+    = i:ident ws
     { Expr { value: i } }
+
+exprlist -> Vec<Expr>
+    = e:expr*
+    { e }
 
 ident -> String
     = [A-Za-z0-9_-]+
@@ -48,5 +53,5 @@ line -> String
 fn main() {
     let res = grammar::rule("foo: bar\n    baz\n    qux");
     let rule = res.unwrap();
-    println!("{} {}", rule.target.value, rule.recipe[0].line);
+    println!("{} {}", rule.targets[0].value, rule.recipe[0].line);
 }
