@@ -15,11 +15,11 @@ fn write_join<T: fmt::Show>(stuff: &Vec<T>, sep: &str,
                             f: &mut fmt::Formatter) -> fmt::Result {
     let mut first = true;
     for v in stuff.iter() {
-        try!(write!(f, "{}", v));
         if !first {
             try!(write!(f, "{}", sep));
         }
         first = false;
+        try!(write!(f, "{}", v));
     }
     Ok(())
 }
@@ -106,6 +106,6 @@ fn main() {
     let rules = res.unwrap();
 
     for rule in rules.iter() {
-        println!("{}\n\n", rule);
+        println!("{}\n", rule);
     }
 }
