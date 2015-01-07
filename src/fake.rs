@@ -19,7 +19,7 @@ fn write_join<T: fmt::Show>(stuff: &Vec<T>, sep: &str,
             try!(write!(f, "{}", sep));
         }
         first = false;
-        try!(write!(f, "{}", v));
+        try!(v.fmt(f));
     }
     Ok(())
 }
@@ -33,7 +33,7 @@ impl fmt::Show for Rule {
         try!(write!(f, "\n"));
 
         for step in self.recipe.iter() {
-            try!(write!(f, "    {}\n", step));
+            try!(step.fmt(f));
         }
 
         Ok(())
@@ -56,7 +56,7 @@ pub struct Recipe {
 
 impl fmt::Show for Recipe {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}\n", self.line)
+        write!(f, "    {}\n", self.line)
     }
 }
 
@@ -106,6 +106,6 @@ fn main() {
     let rules = res.unwrap();
 
     for rule in rules.iter() {
-        println!("{}\n", rule);
+        print!("{}\n", rule);
     }
 }
