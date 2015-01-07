@@ -13,7 +13,21 @@ pub struct Rule {
 
 impl fmt::Show for Rule {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {} {}", self.targets, self.deps, self.recipe)
+        for target in self.targets.iter() {
+            try!(write!(f, "{} ", target));
+        }
+        try!(write!(f, ": "));
+
+        for dep in self.deps.iter() {
+            try!(write!(f, "{} ", dep));
+        }
+        try!(write!(f, "\n"));
+
+        for step in self.recipe.iter() {
+            try!(write!(f, "    {}\n", step));
+        }
+
+        Ok(())
     }
 }
 
@@ -81,7 +95,8 @@ fn main() {
 
     let res = grammar::rulelist(fakefile.as_slice());
     let rules = res.unwrap();
-    println!("{} {}", rules[0].targets[0].value, rules[0].recipe[0].line);
 
-    println!("{}", rules[0]);
+    for rule in rules.iter() {
+        println!("{}\n\n", rule);
+    }
 }
