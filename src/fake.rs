@@ -11,16 +11,25 @@ pub struct Rule {
     pub recipe: Vec<Recipe>
 }
 
+fn write_join<T: fmt::Show>(stuff: &Vec<T>, sep: &str,
+                            f: &mut fmt::Formatter) -> fmt::Result {
+    let mut first = true;
+    for v in stuff.iter() {
+        try!(write!(f, "{}", v));
+        if !first {
+            try!(write!(f, "{}", sep));
+        }
+        first = false;
+    }
+    Ok(())
+}
+
 impl fmt::Show for Rule {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for target in self.targets.iter() {
-            try!(write!(f, "{} ", target));
-        }
+        try!(write_join(&self.targets, " ", f));
         try!(write!(f, ": "));
 
-        for dep in self.deps.iter() {
-            try!(write!(f, "{} ", dep));
-        }
+        try!(write_join(&self.deps, " ", f));
         try!(write!(f, "\n"));
 
         for step in self.recipe.iter() {
