@@ -3,6 +3,7 @@
 extern crate peg_syntax_ext;
 
 use std::io::File;
+use std::fmt;
 
 pub struct Rule {
     pub targets: Vec<Expr>,
@@ -10,12 +11,30 @@ pub struct Rule {
     pub recipe: Vec<Recipe>
 }
 
+impl fmt::Show for Rule {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {} {}", self.targets, self.deps, self.recipe)
+    }
+}
+
 pub struct Expr {
     pub value: String
 }
 
+impl fmt::Show for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
 pub struct Recipe {
     pub line: String
+}
+
+impl fmt::Show for Recipe {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}\n", self.line)
+    }
 }
 
 peg! grammar(r#"
@@ -63,4 +82,6 @@ fn main() {
     let res = grammar::rulelist(fakefile.as_slice());
     let rules = res.unwrap();
     println!("{} {}", rules[0].targets[0].value, rules[0].recipe[0].line);
+
+    println!("{}", rules[0]);
 }
