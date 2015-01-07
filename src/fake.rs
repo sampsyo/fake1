@@ -2,6 +2,8 @@
 #[phase(plugin)]
 extern crate peg_syntax_ext;
 
+use std::io::File;
+
 pub struct Rule {
     pub targets: Vec<Expr>,
     pub deps: Vec<Expr>,
@@ -22,8 +24,12 @@ use super::Expr;
 use super::Recipe;
 
 #[pub]
+rulelist -> Vec<Rule>
+    = r:rule*
+    { r }
+
 rule -> Rule
-    = t:exprlist ws ":" ws d:exprlist ws r:recipe*
+    = t:exprlist ws ":" ws d:exprlist ws r:recipe* [\n]*
     { Rule { targets: t, deps: d, recipe: r } }
 
 recipe -> Recipe
@@ -51,7 +57,10 @@ line -> String
 "#)
 
 fn main() {
-    let res = grammar::rule("foo: bar\n    baz\n    qux");
-    let rule = res.unwrap();
-    println!("{} {}", rule.targets[0].value, rule.recipe[0].line);
+    let content = File::open(&Path::new("Fakefile")).read_to_end();
+    let fakefile = String::from_utf8(content.unwrap()).unwrap();
+
+    let res = grammar::rulelist(fakefile.as_slice());
+    let rules = res.unwrap();
+    println!("{} {}", rules[0].targets[0].value, rules[0].recipe[0].line);
 }
