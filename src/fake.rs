@@ -1,5 +1,6 @@
-#![feature(phase)]
-#[phase(plugin)]
+#![feature(plugin)]
+
+#[plugin]
 extern crate peg_syntax_ext;
 extern crate serialize;
 
@@ -7,7 +8,7 @@ use std::io::File;
 use std::fmt;
 use serialize::{json, Encodable, Encoder};
 
-#[deriving(Encodable)]
+#[derive(Encodable)]
 pub struct Rule {
     pub targets: Vec<Expr>,
     pub deps: Vec<Expr>,
@@ -43,7 +44,7 @@ impl fmt::Show for Rule {
     }
 }
 
-#[deriving(Encodable)]
+#[derive(Encodable)]
 pub struct Expr {
     pub value: String
 }
@@ -54,7 +55,7 @@ impl fmt::Show for Expr {
     }
 }
 
-#[deriving(Encodable)]
+#[derive(Encodable)]
 pub struct Recipe {
     pub line: String
 }
@@ -96,12 +97,12 @@ exprlist -> Vec<Expr>
 
 ident -> String
     = [A-Za-z0-9_-]+
-    { match_str.into_string() }
+    { String::from_str(match_str) }
 
 line -> String
     = [A-Za-z0-9 \t_-]+
-    { match_str.into_string() }
-"#)
+    { String::from_str(match_str) }
+"#);
 
 fn pretty_encode<T : Encodable>(o: &T) -> String {
     let mut buffer: Vec<u8> = Vec::new();
