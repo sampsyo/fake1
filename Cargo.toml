@@ -6,5 +6,8 @@ authors = [ "Adrian Sampson <adrian@radbox.org>" ]
 [[bin]]
 name = "fake"
 
+[dependencies]
+rustc-serialize = "0.2"
+
 [dependencies.peg]
 git = "https://github.com/kevinmehall/rust-peg.git"

@@ -3,12 +3,13 @@
 #[plugin]
 extern crate peg_syntax_ext;
 extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 
 use std::io::File;
 use std::fmt;
-use serialize::{json, Encodable, Encoder};
+use rustc_serialize::{json, Encodable, Encoder};
 
-#[derive(Encodable)]
+#[derive(RustcEncodable)]
 pub struct Rule {
     pub targets: Vec<Expr>,
     pub deps: Vec<Expr>,
@@ -44,7 +45,7 @@ impl fmt::Show for Rule {
     }
 }
 
-#[derive(Encodable)]
+#[derive(RustcEncodable)]
 pub struct Expr {
     pub value: String
 }
@@ -55,7 +56,7 @@ impl fmt::Show for Expr {
     }
 }
 
-#[derive(Encodable)]
+#[derive(RustcEncodable)]
 pub struct Recipe {
     pub line: String
 }
