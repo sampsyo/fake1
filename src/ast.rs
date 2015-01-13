@@ -9,7 +9,7 @@ pub struct Rule {
     pub recipe: Vec<Recipe>
 }
 
-fn write_join<T: fmt::Show>(stuff: &Vec<T>, sep: &str,
+fn fmt_join<T: fmt::String>(stuff: &Vec<T>, sep: &str,
                             f: &mut fmt::Formatter) -> fmt::Result {
     let mut first = true;
     for v in stuff.iter() {
@@ -22,12 +22,12 @@ fn write_join<T: fmt::Show>(stuff: &Vec<T>, sep: &str,
     Ok(())
 }
 
-impl fmt::Show for Rule {
+impl fmt::String for Rule {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write_join(&self.targets, " ", f));
+        try!(fmt_join(&self.targets, " ", f));
         try!(write!(f, ": "));
 
-        try!(write_join(&self.deps, " ", f));
+        try!(fmt_join(&self.deps, " ", f));
         try!(write!(f, "\n"));
 
         for step in self.recipe.iter() {
@@ -43,7 +43,7 @@ pub struct Expr {
     pub value: String
 }
 
-impl fmt::Show for Expr {
+impl fmt::String for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value)
     }
@@ -54,7 +54,7 @@ pub struct Recipe {
     pub line: String
 }
 
-impl fmt::Show for Recipe {
+impl fmt::String for Recipe {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "    {}\n", self.line)
     }
