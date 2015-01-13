@@ -14,11 +14,8 @@ fn main() {
     let fakefile = String::from_utf8(content.unwrap()).unwrap();
 
     let res = grammar::rulelist(fakefile.as_slice());
-    let rules = res.unwrap();
+    let book = res.unwrap();
 
-    for rule in rules.iter() {
-        print!("{}\n", rule);
-    }
-
-    print!("{}", json::as_pretty_json(&rules));
+    println!("{}", book);
+    print!("{}", json::as_pretty_json(&book));
 }

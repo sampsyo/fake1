@@ -3,10 +3,25 @@ extern crate "rustc-serialize" as rustc_serialize;
 use std::fmt;
 
 #[derive(RustcEncodable)]
+pub struct Cookbook {
+    pub rules: Vec<Rule>,
+}
+
+#[derive(RustcEncodable)]
 pub struct Rule {
     pub targets: Vec<Expr>,
     pub deps: Vec<Expr>,
-    pub recipe: Vec<Recipe>
+    pub recipe: Vec<Recipe>,
+}
+
+#[derive(RustcEncodable)]
+pub struct Expr {
+    pub value: String,
+}
+
+#[derive(RustcEncodable)]
+pub struct Recipe {
+    pub line: String,
 }
 
 fn fmt_join<T: fmt::String>(stuff: &Vec<T>, sep: &str,
@@ -20,6 +35,12 @@ fn fmt_join<T: fmt::String>(stuff: &Vec<T>, sep: &str,
         try!(v.fmt(f));
     }
     Ok(())
+}
+
+impl fmt::String for Cookbook {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt_join(&self.rules, "\n", f)
+    }
 }
 
 impl fmt::String for Rule {
@@ -38,20 +59,10 @@ impl fmt::String for Rule {
     }
 }
 
-#[derive(RustcEncodable)]
-pub struct Expr {
-    pub value: String
-}
-
 impl fmt::String for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value)
     }
-}
-
-#[derive(RustcEncodable)]
-pub struct Recipe {
-    pub line: String
 }
 
 impl fmt::String for Recipe {

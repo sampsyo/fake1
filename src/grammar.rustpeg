@@ -1,11 +1,9 @@
-use ast::Rule;
-use ast::Expr;
-use ast::Recipe;
+use ast::{Rule, Expr, Recipe, Cookbook};
 
 #[pub]
-rulelist -> Vec<Rule>
+rulelist -> Cookbook
     = r:rule*
-    { r }
+    { Cookbook { rules: r } }
 
 rule -> Rule
     = t:exprlist ws ":" ws d:exprlist ws r:recipe* [\n]*
