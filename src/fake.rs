@@ -3,7 +3,7 @@
 extern crate peg_syntax_ext;
 extern crate "rustc-serialize" as rustc_serialize;
 
-use rustc_serialize::{json, Encodable};
+use rustc_serialize::json;
 use std::io::File;
 
 mod ast;
