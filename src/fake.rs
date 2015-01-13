@@ -4,48 +4,10 @@ extern crate peg_syntax_ext;
 extern crate "rustc-serialize" as rustc_serialize;
 
 use rustc_serialize::{json, Encodable};
-
 use std::io::File;
 
 mod ast;
-
-peg! grammar(r#"
-use ast::Rule;
-use ast::Expr;
-use ast::Recipe;
-
-#[pub]
-rulelist -> Vec<Rule>
-    = r:rule*
-    { r }
-
-rule -> Rule
-    = t:exprlist ws ":" ws d:exprlist ws r:recipe* [\n]*
-    { Rule { targets: t, deps: d, recipe: r } }
-
-recipe -> Recipe
-    = "\n" [ \t]+ l:line
-    { Recipe { line: l } }
-
-ws -> ()
-    = [ \t]*
-
-expr -> Expr
-    = i:ident ws
-    { Expr { value: i } }
-
-exprlist -> Vec<Expr>
-    = e:expr*
-    { e }
-
-ident -> String
-    = [A-Za-z0-9_-]+
-    { String::from_str(match_str) }
-
-line -> String
-    = [A-Za-z0-9 \t_-]+
-    { String::from_str(match_str) }
-"#);
+peg_file! grammar("grammar.rustpeg");
 
 fn pretty_encode<T : Encodable>(o: &T) -> String {
     let mut buffer: Vec<u8> = Vec::new();
