@@ -22,58 +22,26 @@ You can write the desugared versions of these three expressions using parenthese
     ( File (interp "{name}.pdf") ): ( File (interp "{name}.tex") )
         ( Shell (interp "pdflatex {name}") )
 
-The `interp` above is a macro (TODO: function?) that in turn expands to concatenation. (TODO: Is this defined in a library or is it magical? Do we really need general macros? And how about `Cat`: that's magical, right?)
+The `interp` above is a macro (TODO: function?) that in turn expands to concatenation. (TODO: Is this defined in a library or is it magical? Do we really need general macros? And how about `Str`: that's magical, right?)
 
-    ( File (Cat name ".pdf") ): ( File (Cat name ".tex") )
-        ( Shell (Cat "pdflatex " name) )
+    ( File (Str name ".pdf") ): ( File (Str name ".tex") )
+        ( Shell (Str "pdflatex " name) )
 
-The essence of Fake's pattern matching is clearer in this desugared form. Fake expressions are just S-expressions. Pattern matching works by trying to align these trees.
+These elaborated expressions show the essence of values in Fake: they are S-expressions. The first position in a value expression is a constructor, which is always written Capitalized. Lower-case first positions are function calls. Fake provides pattern-matching for these trees along the lines of ML or any other functional language worth its salt.
 
-Pattern matching works much like Make but for trees instead of strings:
+To see the similarity with an ordinary functional language, we can desugar this Make rule syntax further to a function definition. In general, a Make rule like this:
 
-1. Take as input a *goal expression*. For example, a goal expression `( File "paper.pdf" )` indicates that we want to build the file `paper.pdf`---our goal is for that file to exist.
-2. Look through the list of rules in the cookbook and try to match (one of) each rule's *taget expression* with the goal.
-3. For the matching rule's *prerequisite expressions*, recursively treat each as a goal and find a matching rule for each. This builds up a *dependency tree*. (TODO: What about cycles?)
-4. Now that we have a tree, execute each recipe from the bottom up. (TODO: How to express timestamp-based re-making?)
+    target: dependency
+        recipe
 
-Maybe one further desugaring step can get rid of the standard Make target-prerequisites-recipe syntax?
+is sugar for the Fake function declaration:
 
-    func pat -> res
+    let make target = Plan (make dependency) recipe
 
-    func target -> Recipe( prerequisite recipe )
+This declaration says, *To make `target`, first recursively try to make `dependency` and get its plan. If that succeeds, return a new plan that glues the result together with `recipe`.* This easily generalizes to multiple dependencies and multiple recipe steps.
 
-    rule File (Cat name ".pdf") ->
-        Rule( ( File ( Cat name ".tex" ) )
-              ( Shell ( Cat "pdflatex " name ) ) )
+The user interacts with this Fake program by calling `make something`, which returns a full plan tree for making `something`. The Fake program then executes all the steps in the complete plan.
 
-Or maybe it's:
+To make this useful, we need pattern matching to work a bit differently than it does in most functional languages: it needs *backtracking*. In ordinary languages, a call `f x` can fail if the argument `x` matches none of the declarations for the function `f`---and a failure like this halts the program. In Fake, a match failure *propagates* to the calling function, causing its rule to fail. The backtracking pattern matcher can then try the next rule for the calling function.
 
-    make target -> ( make prerequisite ) ++ recipe
-
-    make File (Cat name ".pdf") ->
-        ( make ( File ( Cat name ".tex" ) ) )
-        ++ [ Shell ( Cat "pdflatex " name ) ]
-
-Where there's some manner of backtracking search. If any of the `rule` calls fail, that bubbles up and causes the parent match to fail. The pattern matcher then has to find another rule for the outer match.
-
-TODO: How to represent multiple prereqs and multiple recipes?
-
-So `Big` is a constructor and `little` is a pattern-matched function call? Perhaps the algorithm goes like this:
-
-    actions = []
-    def algorithm(target):
-        for prerequisite, recipe in make(target):
-            if algorithm(prerequisite):
-                actions += recipe
-            else:
-                return False  # Could not satisfy prerequisite.
-        return True  # Satisfied everything.
-
-    make(target) -> make(target, [])
-    make(target, actions) ->
-        match rule(target) with
-            Rule(prerequisite, recipe) -> 
-            | nomatch -> xxx
-    make(null, actions) -> actions
-
-TODO: Feels like we need to re-implement pattern matching to deal with the prereqs side of the equation. Or, rather, the above attempt to use the pattern-match needs to get all the matches in order and discard them, which should be pattern-matching's job.
+TODO: There needs to be some manner of fallback rule for `make (File s)`. And some universal semantics for `File` (or in general?) to implement newness detection...
