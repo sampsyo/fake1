@@ -44,4 +44,14 @@ The user interacts with this Fake program by calling `make something`, which ret
 
 To make this useful, we need pattern matching to work a bit differently than it does in most functional languages: it needs *backtracking*. In ordinary languages, a call `f x` can fail if the argument `x` matches none of the declarations for the function `f`---and a failure like this halts the program. In Fake, a match failure *propagates* to the calling function, causing its rule to fail. The backtracking pattern matcher can then try the next rule for the calling function.
 
+Backtracking lets Fake implement the incredibly useful Make behavior that recursively searches rules for a plan to succeed. As in this Makefile:
+
+    foo.%: bar.%
+        cp $^ $@
+
+    foo.%: baz.%
+        cp $^ $@
+
+Fake needs a way to make `foo.txt` using *either* `bar.txt` or `baz.txt`, whichever happens to exist. This seemingly arcane Make behavior is easily modeled as Fake's pattern matching with backtracking.
+
 TODO: There needs to be some manner of fallback rule for `make (File s)`. And some universal semantics for `File` (or in general?) to implement newness detection...
