@@ -11,12 +11,11 @@ I'm using an asterisk as a Kleene star.
 
 A program is a statement sequence. Statements add bindings to the language:
 
-    s ::= e
-        | symbol <- e
+    s ::= symbol <- e
         | p -> e
         | s ; s
 
-This version *usefully* consists of a list of bindings followed by a single expression, but we structure it as an imperative sequence so we can add other control later. The two types of bindings are eager (the `<-` form, where the pattern must be a symbol---mnemonic "gets") and lambda-style (the `->` form, where the pattern `p` is general---mnemonic "function").
+The two types of bindings are eager (the `<-` form, where the pattern must be a symbol---mnemonic "gets") and lambda-style (the `->` form, where the pattern `p` is general---mnemonic "function").
 
 Patterns follow expressions closely but do not have invocations. Instead, they add binding names, written like `:this`:
 
@@ -36,19 +35,25 @@ Unsurprisingly, run-time values are just tuple-trees:
 
 Just an expression, using a built-in binding for `print` that makes it look like a function:
 
-    $(print "Hello, world!")
+    _ <- $(print "Hello, world!")
 
 The same, but via a user-defined "function":
 
     (greet :s) -> $(print $(cat "Hello, " $s "!"));
-    $(greet "world")
+    _ <- $(greet "world")
 
-That tiny example reveals two unfortunate aspects of the syntax: the semicolon, which should really be whitespace, and the extra parentheses on the LHS of the binding. A tuple should probably be implied, and a single-element tuple should be equivalent to an atom. Maybe this should be sugar.
+That tiny example reveals three unfortunate aspects of the syntax:
+
+* The semicolon, which should really be whitespace.
+* The extra parentheses on the LHS of the binding. A tuple should probably be implied, and a single-element tuple should be equivalent to an atom.
+* Expressions evaluated only for their side effects still need to bind to some name. We could could consider allowing bare expressions.
+
+Maybe these can be hidden with sugar.
 
 One more step shows how bindings work like variables:
 
     who <- "world";
-    $(greet $who)
+    _ <- $(greet $who)
 
 The left-arrow binding isn't really material this time, but it decides when the expression is evaluated. Since the language is dynamically scoped, "when" matters.
 
@@ -67,12 +72,12 @@ The construction `(shell ...)` demonstrates a peculiarity that gives us delayed 
 Here's a simpler example of delayed execution. First, this program just emits the tree `(print "Hello!")`:
 
     greeting -> (print "Hello!");
-    $greeting
+    _ <- $greeting
 
 This program, on the other hand, actually prints "Hello!":
 
     greeting -> (print "Hello!");
-    $$greeting
+    _ <- $$greeting
 
 Fake is beginning to look like Lisp but with pattern-matching instead of functions.
 
@@ -80,6 +85,6 @@ How do you write the Make algorithm now? Are there special varargs rules for `se
 
     (seq :a :b :c ...) -> (seq $a $b $c ...)
     (par :a :b :c ...) -> (par $a $b $c ...)  // but in parallel
-    $$(make (file "paper.pdf"))
+    _ <- $$(make (file "paper.pdf"))
 
 TODO: This lets us emit and execute plan *trees*, but a real Make requires *dags*, so that one product can be used as a prerequisite in multiple places. It would also be nice to support one action producing two files.
