@@ -1,57 +1,85 @@
-Traditional Make pattern matching looks like this. You can only refer to one field. So one (somewhat funky) way to write a rule for compiling LaTeX documents to PDFs is:
+## Syntax
 
-    %.pdf: %.tex
-        pdflatex $*
+Expressions `e` have primitive literals (symbols and strings), tuple construction, and match invocations written `$e`:
 
-In Fake, pattern variables have names so you can refer to different parts of the pattern unambiguously. You refer to pattern variables like `{this}`. Conveniently, the first Make-style `%` placeholder is named `%`, so the legacy `$*` is syntactic sugar for the Fake-style `{%}`:
+    e ::= symbol
+        | "string"
+        | (e*)
+        | $e
 
-    %.pdf: %.tex
-        pdflatex {%}
+I'm using an asterisk as a Kleene star.
 
-You can also make the pattern more explicit in Fake by giving it an English name:
+A program is a statement sequence. Statements add bindings to the language:
 
-    {name}.pdf: {name}.tex
-        pdflatex {name}
+    s ::= e
+        | symbol <- e
+        | p -> e
+        | s ; s
 
-That example demonstrates that the `{curly}` syntax represents *quoting* in Fake. You can write Fake expressions inside the braces. You can think of this similar to `#{e}` interpolation in Ruby strings if that's comfortable.
+This version *usefully* consists of a list of bindings followed by a single expression, but we structure it as an imperative sequence so we can add other control later. The two types of bindings are eager (the `<-` form, where the pattern must be a symbol---mnemonic "gets") and lambda-style (the `->` form, where the pattern `p` is general---mnemonic "function").
 
-You can also skip this convenient string-interpolation syntax and write Fake expressions directly. For familiarity, these interpolated chunks are syntactic sugar Fake expressions that use `interp` to interpolate the quoted parts of the string. Targets and prerequisites desugar to `File` expressions, meaning that they refer to an existing file on the filesystem, and recipe lines desugar to `Shell` expressions, indicating `sh` code to execute.
+Patterns follow expressions closely but do not have invocations. Instead, they add binding names, written like `:this`:
 
-You can write the desugared versions of these three expressions using parentheses, which indicate a raw Fake expression rather than a string:
+    p ::= symbol
+        | "string"
+        | (p*)
+        | :symbol
 
-    ( File (interp "{name}.pdf") ): ( File (interp "{name}.tex") )
-        ( Shell (interp "pdflatex {name}") )
+Unsurprisingly, run-time values are just tuple-trees:
 
-The `interp` above is a macro (TODO: function?) that in turn expands to concatenation. (TODO: Is this defined in a library or is it magical? Do we really need general macros? And how about `Str`: that's magical, right?)
+    v ::= symbol
+        | "string"
+        | (v*)
 
-    ( File (Str name ".pdf") ): ( File (Str name ".tex") )
-        ( Shell (Str "pdflatex " name) )
 
-These elaborated expressions show the essence of values in Fake: they are S-expressions. The first position in a value expression is a constructor, which is always written Capitalized. Lower-case first positions are function calls. Fake provides pattern-matching for these trees along the lines of ML or any other functional language worth its salt.
+## Examples
 
-To see the similarity with an ordinary functional language, we can desugar this Make rule syntax further to a function definition. In general, a Make rule like this:
+Just an expression, using a built-in binding for `print` that makes it look like a function:
 
-    target: dependency
-        recipe
+    $(print "Hello, world!")
 
-is sugar for the Fake function declaration:
+The same, but via a user-defined "function":
 
-    let make target = Plan (make dependency) recipe
+    (greet :s) -> $(print $(cat "Hello, " $s "!"));
+    $(greet "world")
 
-This declaration says, *To make `target`, first recursively try to make `dependency` and get its plan. If that succeeds, return a new plan that glues the result together with `recipe`.* This easily generalizes to multiple dependencies and multiple recipe steps.
+That tiny example reveals two unfortunate aspects of the syntax: the semicolon, which should really be whitespace, and the extra parentheses on the LHS of the binding. A tuple should probably be implied, and a single-element tuple should be equivalent to an atom. Maybe this should be sugar.
 
-The user interacts with this Fake program by calling `make something`, which returns a full plan tree for making `something`. The Fake program then executes all the steps in the complete plan.
+One more step shows how bindings work like variables:
 
-To make this useful, we need pattern matching to work a bit differently than it does in most functional languages: it needs *backtracking*. In ordinary languages, a call `f x` can fail if the argument `x` matches none of the declarations for the function `f`---and a failure like this halts the program. In Fake, a match failure *propagates* to the calling function, causing its rule to fail. The backtracking pattern matcher can then try the next rule for the calling function.
+    who <- "world";
+    $(greet $who)
 
-Backtracking lets Fake implement the incredibly useful Make behavior that recursively searches rules for a plan to succeed. As in this Makefile:
+The left-arrow binding isn't really material this time, but it decides when the expression is evaluated. Since the language is dynamically scoped, "when" matters.
 
-    foo.%: bar.%
-        cp $^ $@
+Here's a simple Make rule in Fake:
 
-    foo.%: baz.%
-        cp $^ $@
+    (make (file (str :name ".pdf"))) ->
+        (seq
+            (par
+                $(make (file $(cat $name ".tex")))
+            )
+            (shell $(cat "pdflatex " $name))
+        )
 
-Fake needs a way to make `foo.txt` using *either* `bar.txt` or `baz.txt`, whichever happens to exist. This seemingly arcane Make behavior is easily modeled as Fake's pattern matching with backtracking.
+The construction `(shell ...)` demonstrates a peculiarity that gives us delayed execution for free. Since there is no `$`, we do not "execute" the `shell` "function" when matching this rule. (Scare quote overload intended.) Instead, we wrap it in a `plan` tuple and return it. Later, we can execute it using `$`.
 
-TODO: There needs to be some manner of fallback rule for `make (File s)`. And some universal semantics for `File` (or in general?) to implement newness detection...
+Here's a simpler example of delayed execution. First, this program just emits the tree `(print "Hello!")`:
+
+    greeting -> (print "Hello!");
+    $greeting
+
+This program, on the other hand, actually prints "Hello!":
+
+    greeting -> (print "Hello!");
+    $$greeting
+
+Fake is beginning to look like Lisp but with pattern-matching instead of functions.
+
+How do you write the Make algorithm now? Are there special varargs rules for `seq` and `par`?
+
+    (seq :a :b :c ...) -> (seq $a $b $c ...)
+    (par :a :b :c ...) -> (par $a $b $c ...)  // but in parallel
+    $$(make (file "paper.pdf"))
+
+TODO: This lets us emit and execute plan *trees*, but a real Make requires *dags*, so that one product can be used as a prerequisite in multiple places. It would also be nice to support one action producing two files.
