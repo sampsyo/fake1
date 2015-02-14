@@ -1,6 +1,10 @@
 #![feature(plugin)]
 #![plugin(peg_syntax_ext)]
 
+// The new IO features are experimental. Remove this soon.
+#![feature(fs)]
+#![feature(io)]
+
 extern crate "rustc-serialize" as rustc_serialize;
 
 use rustc_serialize::json;

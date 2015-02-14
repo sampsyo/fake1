@@ -24,7 +24,7 @@ pub struct Recipe {
     pub line: String,
 }
 
-fn fmt_join<T: fmt::String>(stuff: &Vec<T>, sep: &str,
+fn fmt_join<T: fmt::Display>(stuff: &Vec<T>, sep: &str,
                             f: &mut fmt::Formatter) -> fmt::Result {
     let mut first = true;
     for v in stuff.iter() {
@@ -37,13 +37,13 @@ fn fmt_join<T: fmt::String>(stuff: &Vec<T>, sep: &str,
     Ok(())
 }
 
-impl fmt::String for Cookbook {
+impl fmt::Display for Cookbook {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt_join(&self.rules, "\n", f)
     }
 }
 
-impl fmt::String for Rule {
+impl fmt::Display for Rule {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(fmt_join(&self.targets, " ", f));
         try!(write!(f, ": "));
@@ -59,13 +59,13 @@ impl fmt::String for Rule {
     }
 }
 
-impl fmt::String for Expr {
+impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value)
     }
 }
 
-impl fmt::String for Recipe {
+impl fmt::Display for Recipe {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "    {}\n", self.line)
     }
